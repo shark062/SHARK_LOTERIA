@@ -1,145 +1,606 @@
-import { useState } from "react";
-import { NeonCard } from "@/components/NeonCard";
-import { NumberBall } from "@/components/NumberBall";
-import { useAnalysis, useLatestResult } from "@/hooks/use-lottery";
-import { Brain, Flame, Snowflake, AlertOctagon } from "lucide-react";
-import { cn } from "@/lib/utils";
-
-const GRID_SIZE_MAP: Record<string, number> = {
-  "mega-sena": 60,
-  "lotofacil": 25,
-  "quina": 80,
-  "lotomania": 100,
-};
+import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
+import Navigation from "@/components/Navigation";
+import CelebrationAnimation from "@/components/CelebrationAnimation";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useLotteryTypes, useUserStats } from "@/hooks/useLotteryData";
+import { 
+  Trophy, 
+  TrendingUp, 
+  Calendar, 
+  DollarSign,
+  Target,
+  Filter,
+  Search,
+  Medal,
+  Award,
+  Sparkles,
+  BarChart3,
+  Zap,
+  Clock
+} from "lucide-react";
+import type { UserGame, NextDrawInfo } from "@/types/lottery";
 
 export default function Results() {
-  const [gameType, setGameType] = useState("mega-sena");
-  const { data: analysis } = useAnalysis(gameType);
-  const { data: latest } = useLatestResult(gameType);
+  const [filterLottery, setFilterLottery] = useState<string>('all');
+  const [searchContest, setSearchContest] = useState<string>('');
+  const [showCelebration, setShowCelebration] = useState(false);
+  const [celebrationPrize, setCelebrationPrize] = useState<string>();
+  const [currentTime, setCurrentTime] = useState(new Date());
+  const [selectedLottery, setSelectedLottery] = useState<string>('');
+  const [filterDate, setFilterDate] = useState<string>('');
+  const [filterMonth, setFilterMonth] = useState<string>('');
+  const [filterYear, setFilterYear] = useState<string>('');
+  const [filterTime, setFilterTime] = useState<string>('');
 
-  const gridSize = GRID_SIZE_MAP[gameType] || 60;
-  
-  // Calculate heat color
-  const getHeatColor = (frequency: number) => {
-    // Normalize frequency roughly (0-20 scale assumption for demo)
-    if (frequency > 15) return "bg-red-500 shadow-[0_0_10px_red]";
-    if (frequency > 10) return "bg-orange-500";
-    if (frequency > 5) return "bg-yellow-500";
-    if (frequency > 2) return "bg-blue-400";
-    return "bg-blue-900/50 text-white/30";
+  // Data queries
+  const { data: lotteryTypes } = useLotteryTypes();
+
+  const { data: userStats, isLoading: statsLoading } = useQuery({
+    queryKey: ['user-stats'],
+    queryFn: async () => {
+      const response = await fetch('/api/users/stats');
+      if (!response.ok) throw new Error('Failed to fetch user stats');
+      return response.json();
+    },
+    refetchInterval: 60000, // Refetch every 60 seconds
+  });
+
+
+
+  // Update time every second for real-time display
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, []);
+
+  const { data: userGames, isLoading: gamesLoading, refetch: refetchGames } = useQuery({
+    queryKey: ["/api/games?limit=50"],
+    staleTime: 2 * 60 * 1000,
+    refetchInterval: 30000, // Refetch every 30 seconds
+  });
+
+  // Filter games
+  const filteredGames = userGames && Array.isArray(userGames) ? userGames.filter((game: any) => {
+    // Filter by lottery
+    if (filterLottery !== 'all' && game.lotteryId !== filterLottery) return false;
+    
+    // Filter by contest number
+    if (searchContest && !game.contestNumber?.toString().includes(searchContest)) return false;
+    
+    // Filter by specific date (YYYY-MM-DD)
+    if (filterDate) {
+      const gameDate = new Date(game.createdAt).toLocaleDateString('pt-BR');
+      const filterDateBR = new Date(filterDate + 'T00:00:00').toLocaleDateString('pt-BR');
+      if (gameDate !== filterDateBR) return false;
+    }
+    
+    // Filter by month/year (MM/YYYY)
+    if (filterMonth) {
+      const gameMonth = new Date(game.createdAt).toLocaleDateString('pt-BR', { month: '2-digit', year: 'numeric' });
+      if (gameMonth !== filterMonth) return false;
+    }
+    
+    // Filter by year (YYYY)
+    if (filterYear) {
+      const gameYear = new Date(game.createdAt).getFullYear().toString();
+      if (gameYear !== filterYear) return false;
+    }
+    
+    // Filter by time (HH:MM)
+    if (filterTime) {
+      const gameTime = new Date(game.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+      if (gameTime !== filterTime) return false;
+    }
+    
+    return true;
+  }) : [];
+
+  // Get lottery display name
+  const getLotteryName = (lotteryId: string) => {
+    return lotteryTypes?.find(l => l.id === lotteryId)?.displayName || lotteryId;
   };
 
+  // Get prize tier description
+  const getPrizeTier = (lotteryId: string, matches: number) => {
+    const tiers: Record<string, Record<number, string>> = {
+      megasena: {
+        6: 'Sena',
+        5: 'Quina', 
+        4: 'Quadra',
+      },
+      lotofacil: {
+        15: '15 acertos',
+        14: '14 acertos',
+        13: '13 acertos',
+        12: '12 acertos',
+        11: '11 acertos',
+      },
+      quina: {
+        5: 'Quina',
+        4: 'Quadra',
+        3: 'Terno',
+        2: 'Duque',
+      },
+    };
+
+    return tiers[lotteryId]?.[matches] || `${matches} acertos`;
+  };
+
+  // Get matches color
+  const getMatchesColor = (matches: number, prizeWon: string) => {
+    const prize = parseFloat(prizeWon || "0");
+    if (prize > 1000) return "text-neon-gold";
+    if (prize > 100) return "text-neon-green";
+    if (prize > 0) return "text-accent";
+    return "text-muted-foreground";
+  };
+
+  // Calculate total prize won
+  const totalPrizeWon = filteredGames.reduce((sum, game) => 
+    sum + parseFloat(game.prizeWon || "0"), 0
+  );
+
+  // Get winning games
+  const winningGames = filteredGames.filter(game => parseFloat(game.prizeWon || "0") > 0);
+
+  // Get best result
+  const bestResult = winningGames.reduce((best, game) => {
+    const prize = parseFloat(game.prizeWon || "0");
+    const bestPrize = parseFloat(best?.prizeWon || "0");
+    return prize > bestPrize ? game : best;
+  }, null as UserGame | null);
+
   return (
-    <div className="space-y-8 animate-in fade-in duration-500">
-      <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-        <h1 className="text-4xl font-display font-black text-white uppercase">Analysis Core</h1>
-        <div className="flex gap-2">
-          {["mega-sena", "lotofacil", "quina"].map(type => (
-            <button
-              key={type}
-              onClick={() => setGameType(type)}
-              className={cn(
-                "px-4 py-2 rounded-lg font-ui font-bold uppercase transition-all",
-                gameType === type 
-                  ? "bg-primary text-black shadow-[0_0_15px_rgba(0,255,255,0.4)]" 
-                  : "bg-white/5 text-muted-foreground hover:bg-white/10"
-              )}
-            >
-              {type}
-            </button>
-          ))}
-        </div>
-      </div>
+    <div className="min-h-screen bg-background text-foreground">
+      <Navigation />
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Heatmap Section */}
-        <div className="lg:col-span-2">
-          <NeonCard glowColor="none" className="h-full">
-            <h3 className="text-xl font-display font-bold text-white mb-6 flex items-center gap-2">
-              <Flame className="w-5 h-5 text-red-500" />
-              FREQUENCY HEATMAP
-            </h3>
-            
-            <div className="grid grid-cols-10 gap-2 md:gap-3">
-              {Array.from({ length: gridSize }).map((_, i) => {
-                const num = i + 1;
-                const frequency = analysis?.stats.frequencyMap[num] || 0;
-                return (
-                  <div 
-                    key={num}
-                    className={cn(
-                      "aspect-square rounded flex items-center justify-center text-xs md:text-sm font-bold transition-all duration-300 hover:scale-110 cursor-help",
-                      getHeatColor(frequency)
-                    )}
-                    title={`Number ${num}: Drawn ${frequency} times`}
-                  >
-                    {num}
-                  </div>
-                );
-              })}
-            </div>
-            
-            <div className="flex justify-between mt-6 text-xs text-muted-foreground font-mono">
-              <div className="flex items-center gap-2"><div className="w-3 h-3 bg-blue-900/50 rounded" /> RARE</div>
-              <div className="flex items-center gap-2"><div className="w-3 h-3 bg-blue-400 rounded" /> COLD</div>
-              <div className="flex items-center gap-2"><div className="w-3 h-3 bg-yellow-500 rounded" /> WARM</div>
-              <div className="flex items-center gap-2"><div className="w-3 h-3 bg-red-500 rounded" /> HOT</div>
-            </div>
-          </NeonCard>
+      <main className="container mx-auto px-4 py-8">
+        {/* Header */}
+        <div className="text-center mb-8">
+          <h2 className="text-3xl font-bold neon-text text-primary mb-2" data-testid="results-title">
+            Resultados 📊
+          </h2>
+          <p className="text-muted-foreground">
+            Histórico completo dos seus jogos e prêmios
+          </p>
         </div>
 
-        {/* Stats & AI Panel */}
-        <div className="space-y-6">
-          <NeonCard glowColor="secondary">
-            <div className="flex items-center gap-3 mb-4 text-secondary">
-              <Brain className="w-6 h-6" />
-              <h3 className="font-display font-bold text-lg">AI INSIGHT</h3>
-            </div>
-            <p className="text-sm leading-relaxed text-white/80 font-ui border-l-2 border-secondary/30 pl-4">
-              {analysis?.recommendation || "Analyzing pattern streams..."}
+        {/* Live Draw Video */}
+        <Card className="bg-black/20 mb-8">
+          <CardHeader>
+            <CardTitle className="text-primary flex items-center">
+              <div className="flex items-center space-x-2">
+                <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
+                <span>🎬 Sorteios ao Vivo</span>
+              </div>
+            </CardTitle>
+            <p className="text-sm text-muted-foreground">
+              Acompanhe os sorteios das loterias em tempo real
             </p>
-          </NeonCard>
-
-          <NeonCard glowColor="none">
-            <h4 className="text-sm font-bold text-muted-foreground uppercase tracking-wider mb-4">Extremes</h4>
-            
-            <div className="space-y-4">
-              <div>
-                <div className="flex items-center gap-2 mb-2 text-red-400 text-xs font-bold uppercase">
-                  <Flame className="w-4 h-4" /> Hottest Numbers
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {analysis?.stats.hotNumbers.slice(0, 5).map(num => (
-                    <NumberBall key={num} number={num} size="sm" variant="hot" />
-                  ))}
-                </div>
+          </CardHeader>
+          <CardContent>
+            <div className="aspect-video w-full rounded-lg overflow-hidden bg-black/20">
+              <iframe
+                src="https://www.youtube.com/embed/BuVN7GxUKWE?autoplay=1&mute=1"
+                title="Sorteios da Caixa ao Vivo"
+                className="w-full h-full"
+                frameBorder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                allowFullScreen
+                data-testid="live-draw-video"
+              />
+            </div>
+            <div className="mt-4 space-y-3">
+              <div className="text-center">
+                <p className="text-xs text-muted-foreground">
+                  Transmissão oficial da Caixa Econômica Federal
+                </p>
               </div>
 
-              <div>
-                <div className="flex items-center gap-2 mb-2 text-blue-400 text-xs font-bold uppercase">
-                  <Snowflake className="w-4 h-4" /> Coldest Numbers
+              {/* Live Draw Info */}
+              <div className="bg-black/30 rounded-lg p-4 space-y-3">
+                <div className="flex items-center justify-center space-x-2 mb-3">
+                  <Clock className="h-4 w-4 text-primary" />
+                  <span className="text-sm font-semibold text-primary">Informações dos Sorteios</span>
                 </div>
-                <div className="flex flex-wrap gap-2">
-                  {analysis?.stats.coldNumbers.slice(0, 5).map(num => (
-                    <NumberBall key={num} number={num} size="sm" variant="cold" />
-                  ))}
+
+                {/* Current Time */}
+                <div className="text-center">
+                  <div className="text-xs text-muted-foreground mb-1">Horário Atual (Brasília)</div>
+                  <div className="font-mono text-lg text-accent" data-testid="current-time">
+                    {currentTime.toLocaleString('pt-BR', {
+                      timeZone: 'America/Sao_Paulo',
+                      weekday: 'short',
+                      day: '2-digit',
+                      month: '2-digit',
+                      year: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                      second: '2-digit'
+                    })}
+                  </div>
                 </div>
-              </div>
-              
-              <div>
-                <div className="flex items-center gap-2 mb-2 text-purple-400 text-xs font-bold uppercase">
-                  <AlertOctagon className="w-4 h-4" /> Rare (Last 20)
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {analysis?.stats.rareNumbers.slice(0, 5).map(num => (
-                    <NumberBall key={num} number={num} size="sm" className="bg-purple-900/40 border-purple-500 text-purple-200" />
-                  ))}
+
+
+
+                {/* General Draw Times */}
+                <div className="text-center border-t border-border/30 pt-3">
+                  <div className="text-xs text-muted-foreground mb-2">Horários dos Sorteios</div>
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div>
+                      <span className="text-accent font-semibold">Super Sete:</span> 20:00h
+                    </div>
+                    <div>
+                      <span className="text-primary font-semibold">Demais:</span> 20:00h
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
-          </NeonCard>
+          </CardContent>
+        </Card>
+
+        {/* Statistics Overview */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+          <Card className="bg-black/20">
+            <CardContent className="p-4 text-center">
+              <Trophy className="h-8 w-8 mx-auto mb-2 text-primary" />
+              <div className="text-2xl font-bold text-primary neon-text" data-testid="total-games-stat">
+                {statsLoading ? "..." : userStats?.totalGames || 0}
+              </div>
+              <div className="text-xs text-muted-foreground">Jogos Realizados</div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-black/20">
+            <CardContent className="p-4 text-center">
+              <Medal className="h-8 w-8 mx-auto mb-2 text-neon-green" />
+              <div className="text-2xl font-bold text-neon-green neon-text" data-testid="total-wins-stat">
+                {statsLoading ? "..." : userStats?.wins || 0}
+              </div>
+              <div className="text-xs text-muted-foreground">Prêmios Ganhos</div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-black/20">
+            <CardContent className="p-4 text-center">
+              <BarChart3 className="h-8 w-8 mx-auto mb-2 text-accent" />
+              <div className="text-2xl font-bold text-accent neon-text" data-testid="accuracy-stat">
+                {statsLoading ? "..." : `${userStats?.accuracy || 0}%`}
+              </div>
+              <div className="text-xs text-muted-foreground">Taxa de Acerto</div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-black/20">
+            <CardContent className="p-4 text-center">
+              <DollarSign className="h-8 w-8 mx-auto mb-2 text-neon-gold" />
+              <div className="text-2xl font-bold text-neon-gold neon-text" data-testid="total-prize-stat">
+                R$ {totalPrizeWon.toFixed(2).replace('.', ',')}
+              </div>
+              <div className="text-xs text-muted-foreground">Total Ganho</div>
+            </CardContent>
+          </Card>
         </div>
-      </div>
+
+        {/* Best Result Highlight */}
+        {bestResult && (
+          <Card className="bg-black/20">
+            <div className="absolute inset-0 bg-black/20"></div>
+            <CardContent className="p-6 relative z-10">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center space-x-3">
+                  <Award className="h-8 w-8 text-neon-gold" />
+                  <div>
+                    <h3 className="text-xl font-bold text-neon-gold neon-text">Melhor Resultado 🏆</h3>
+                    <p className="text-sm text-muted-foreground">Seu maior prêmio até agora</p>
+                  </div>
+                </div>
+                <Button
+                  onClick={() => {
+                    setCelebrationPrize(`R$ ${bestResult.prizeWon}`);
+                    setShowCelebration(true);
+                  }}
+                  variant="outline"
+                  size="sm"
+                  className="border-neon-gold text-neon-gold hover:bg-neon-gold/10"
+                  data-testid="celebrate-best-result-button"
+                >
+                  <Sparkles className="h-4 w-4 mr-2" />
+                  Comemorar
+                </Button>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="text-center">
+                  <div className="text-3xl font-bold text-neon-gold neon-text" data-testid="best-prize-amount">
+                    R$ {parseFloat(bestResult.prizeWon || "0").toFixed(2).replace('.', ',')}
+                  </div>
+                  <div className="text-sm text-muted-foreground">Valor do Prêmio</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-3xl font-bold text-foreground" data-testid="best-lottery">
+                    {getLotteryName(bestResult.lotteryId)}
+                  </div>
+                  <div className="text-sm text-muted-foreground">Modalidade</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-3xl font-bold text-accent" data-testid="best-matches">
+                    {bestResult.matches} / {bestResult.selectedNumbers.length}
+                  </div>
+                  <div className="text-sm text-muted-foreground">{getPrizeTier(bestResult.lotteryId, bestResult.matches)}</div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Filters */}
+        <Card className="bg-black/20 mb-6">
+          <CardContent className="p-4">
+            <div className="space-y-4">
+              <div className="flex items-center space-x-2 mb-3">
+                <Filter className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm font-medium">Filtros:</span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+                {/* Lottery filter */}
+                <Select value={filterLottery} onValueChange={setFilterLottery}>
+                  <SelectTrigger data-testid="lottery-filter">
+                    <SelectValue placeholder="Modalidade" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todas as modalidades</SelectItem>
+                    {lotteryTypes?.map((lottery) => (
+                      <SelectItem key={lottery.id} value={lottery.id}>
+                        {lottery.displayName}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                {/* Contest search */}
+                <div className="flex items-center space-x-2">
+                  <Search className="h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Concurso..."
+                    value={searchContest}
+                    onChange={(e) => setSearchContest(e.target.value)}
+                    className="flex-1"
+                    data-testid="contest-search"
+                  />
+                </div>
+
+                {/* Date filter */}
+                <div className="flex items-center space-x-2">
+                  <Calendar className="h-4 w-4 text-muted-foreground" />
+                  <Input
+                    type="date"
+                    value={filterDate}
+                    onChange={(e) => setFilterDate(e.target.value)}
+                    className="flex-1"
+                    placeholder="Dia"
+                    data-testid="date-filter"
+                  />
+                </div>
+
+                {/* Month/Year filter */}
+                <Input
+                  type="month"
+                  value={filterMonth ? filterMonth.split('/').reverse().join('-') : ''}
+                  onChange={(e) => {
+                    if (e.target.value) {
+                      const [year, month] = e.target.value.split('-');
+                      setFilterMonth(`${month}/${year}`);
+                    } else {
+                      setFilterMonth('');
+                    }
+                  }}
+                  placeholder="Mês/Ano"
+                  data-testid="month-filter"
+                />
+
+                {/* Time filter */}
+                <Input
+                  type="time"
+                  value={filterTime}
+                  onChange={(e) => setFilterTime(e.target.value)}
+                  placeholder="Hora"
+                  data-testid="time-filter"
+                />
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div className="text-sm text-muted-foreground">
+                  Mostrando {filteredGames.length} de {userGames?.length || 0} jogos
+                </div>
+                {(filterDate || filterMonth || filterYear || filterTime || filterLottery !== 'all' || searchContest) && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setFilterDate('');
+                      setFilterMonth('');
+                      setFilterYear('');
+                      setFilterTime('');
+                      setFilterLottery('all');
+                      setSearchContest('');
+                    }}
+                    data-testid="clear-filters-button"
+                  >
+                    Limpar filtros
+                  </Button>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Games List */}
+        <Card className="bg-black/20 backdrop-blur-sm">
+          <CardHeader>
+            <CardTitle className="text-primary flex items-center">
+              <Target className="h-5 w-5 mr-2" />
+              Histórico de Jogos
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {gamesLoading ? (
+              <div className="space-y-4">
+                {[...Array(5)].map((_, i) => (
+                  <div key={i} className="p-4 bg-black/20 rounded-lg animate-pulse">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-20 h-4 bg-black/20 rounded"></div>
+                        <div className="w-16 h-4 bg-black/20 rounded"></div>
+                      </div>
+                      <div className="w-24 h-4 bg-black/20 rounded"></div>
+                    </div>
+                    <div className="flex space-x-2 mb-3">
+                      {[...Array(6)].map((_, j) => (
+                        <div key={j} className="w-10 h-10 bg-black/20 rounded-full"></div>
+                      ))}
+                    </div>
+                    <div className="w-32 h-3 bg-black/20 rounded"></div>
+                  </div>
+                ))}
+              </div>
+            ) : filteredGames.length > 0 ? (
+              <div className="space-y-4">
+                {filteredGames.map((game, index) => {
+                  const prizeWon = parseFloat(game.prizeWon || "0");
+                  const hasWon = prizeWon > 0;
+
+                  return (
+                    <Card key={game.id} className={`bg-black/20 border-border/50 ${hasWon ? 'ring-1 ring-neon-green/30' : ''}`}>
+                      <CardContent className="p-4">
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center space-x-3">
+                            <Badge variant="secondary" className="font-mono">
+                              {getLotteryName(game.lotteryId)}
+                            </Badge>
+                            <Badge variant="outline" className="font-mono" data-testid={`game-${index}-contest`}>
+                              #{game.contestNumber}
+                            </Badge>
+                            <span className="text-xs text-muted-foreground flex items-center">
+                              <Calendar className="h-3 w-3 mr-1" />
+                              {new Date(game.createdAt).toLocaleDateString('pt-BR')}
+                            </span>
+                          </div>
+
+                          <div className="text-right">
+                            <div className={`text-lg font-bold ${getMatchesColor(game.matches, game.prizeWon || "0")}`} data-testid={`game-${index}-prize`}>
+                              {hasWon ? `R$ ${prizeWon.toFixed(2).replace('.', ',')}` : 'R$ 0,00'}
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                              {hasWon ? getPrizeTier(game.lotteryId, game.matches) : 'Sem acerto'}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center justify-between">
+                          <div className="flex flex-wrap gap-2">
+                            {game.selectedNumbers.map((number) => (
+                              <Badge
+                                key={number}
+                                variant="secondary"
+                                className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
+                                  hasWon ? 'bg-neon-green text-black' : 'bg-black/20 text-muted-foreground'
+                                }`}
+                                data-testid={`game-${index}-number-${number}`}
+                              >
+                                {number.toString().padStart(2, '0')}
+                              </Badge>
+                            ))}
+                          </div>
+
+                          <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+                            <span className="flex items-center">
+                              <Target className="h-3 w-3 mr-1" />
+                              {game.matches} acertos
+                            </span>
+                            <Badge variant="outline" className="text-xs">
+                              {game.strategy}
+                            </Badge>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="text-center text-muted-foreground py-12">
+                <Trophy className="h-16 w-16 mx-auto mb-4 opacity-50" />
+                <p className="text-lg mb-2">Nenhum resultado encontrado</p>
+                <p className="text-sm mb-6">
+                  {userGames?.length === 0 
+                    ? "Você ainda não tem jogos realizados"
+                    : "Tente ajustar os filtros"
+                  }
+                </p>
+                <Button 
+                  onClick={() => window.location.href = '/generator'}
+                  className="bg-black/20"
+                  data-testid="generate-first-game-button"
+                >
+                  <Zap className="h-4 w-4 mr-2" />
+                  Gerar Primeiro Jogo
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Quick Actions */}
+        {filteredGames.length > 0 && (
+          <div className="text-center mt-8">
+            <div className="inline-flex gap-4">
+              <Button 
+                onClick={() => window.location.href = '/generator'}
+                className="bg-black/20"
+                data-testid="generate-more-games-button"
+              >
+                <Zap className="h-4 w-4 mr-2" />
+                Gerar Mais Jogos
+              </Button>
+
+              <Button 
+                onClick={() => window.location.href = '/ai-analysis'}
+                variant="outline"
+                className="border-secondary text-secondary hover:bg-black/20"
+                data-testid="ai-analysis-button"
+              >
+                <TrendingUp className="h-4 w-4 mr-2" />
+                Análise IA
+              </Button>
+            </div>
+          </div>
+        )}
+      </main>
+
+      {/* Developer Footer */}
+      <footer className="text-center py-4 mt-8 border-t border-border/20">
+        <p className="text-xs text-muted-foreground">
+          powered by <span className="text-accent font-semibold">Shark062</span>
+        </p>
+      </footer>
+
+      {/* Celebration Animation */}
+      <CelebrationAnimation 
+        isVisible={showCelebration}
+        prizeAmount={celebrationPrize}
+        onComplete={() => setShowCelebration(false)}
+      />
     </div>
   );
 }

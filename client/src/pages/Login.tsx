@@ -1,49 +1,109 @@
-import { useEffect } from "react";
-import { useAuth } from "@/hooks/use-auth";
-import { useLocation } from "wouter";
+import { useState } from 'react';
+import { useLocation } from 'wouter';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { useToast } from '@/hooks/use-toast';
+import { LogIn, Zap } from 'lucide-react';
 
 export default function Login() {
-  const { isAuthenticated, isLoading } = useAuth();
-  const [, setLocation] = useLocation();
+  const [, navigate] = useLocation();
+  const { toast } = useToast();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    if (isAuthenticated) {
-      setLocation("/");
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Login failed');
+      }
+
+      // Store token
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('user', JSON.stringify(data.user));
+
+      toast({
+        title: 'Success',
+        description: 'Logged in successfully!',
+      });
+
+      navigate('/');
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Login failed',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
     }
-  }, [isAuthenticated, setLocation]);
-
-  if (isLoading) return null;
+  };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-black relative overflow-hidden">
-      {/* Animated background elements */}
-      <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 pointer-events-none" />
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-primary/20 blur-[120px] rounded-full pointer-events-none" />
-      
-      <div className="relative z-10 max-w-md w-full p-8 text-center space-y-8 bg-card/50 backdrop-blur-xl border border-white/10 rounded-3xl shadow-2xl">
-        <div className="space-y-2">
-          <h1 className="text-4xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary font-display italic tracking-tighter animate-pulse">
-            SHARK<br/><span className="text-white text-2xl font-normal tracking-[0.5em] not-italic">LOTERIA</span>
-          </h1>
-          <p className="text-muted-foreground font-ui text-lg mt-4">
-            Advanced Lottery Probability Engine
-          </p>
-        </div>
+    <div className="min-h-screen bg-background text-foreground flex items-center justify-center p-4">
+      <Card className="w-full max-w-md bg-black/40 border-primary/30">
+        <CardHeader className="text-center">
+          <div className="flex justify-center mb-4">
+            <Zap className="h-12 w-12 text-primary neon-glow" />
+          </div>
+          <CardTitle className="text-2xl neon-text text-primary">Shark Loterias</CardTitle>
+          <CardDescription>Entre em sua conta</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleLogin} className="space-y-4">
+            <Input
+              type="email"
+              placeholder="Email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              data-testid="input-email"
+              className="bg-black/20"
+            />
+            <Input
+              type="password"
+              placeholder="Senha"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              data-testid="input-password"
+              className="bg-black/20"
+            />
+            <Button
+              type="submit"
+              disabled={loading}
+              className="w-full"
+              data-testid="button-login"
+            >
+              <LogIn className="h-4 w-4 mr-2" />
+              {loading ? 'Entrando...' : 'Entrar'}
+            </Button>
+          </form>
 
-        <div className="p-1 rounded-2xl bg-gradient-to-r from-primary via-secondary to-accent">
-          <button 
-            onClick={() => window.location.href = "/api/login"}
-            className="w-full bg-black hover:bg-black/80 text-white font-bold py-4 rounded-xl transition-all flex items-center justify-center gap-3 uppercase tracking-widest font-ui group"
-          >
-            Initialize System
-            <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse group-hover:scale-150 transition-transform" />
-          </button>
-        </div>
-
-        <p className="text-xs text-muted-foreground/50 font-mono">
-          SECURE CONNECTION REQUIRED • SYSTEM 3050.v1
-        </p>
-      </div>
+          <div className="mt-6 text-center text-sm text-muted-foreground">
+            Sem conta?{' '}
+            <button
+              onClick={() => navigate('/register')}
+              className="text-primary hover:underline font-semibold"
+              data-testid="link-register"
+            >
+              Criar conta
+            </button>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

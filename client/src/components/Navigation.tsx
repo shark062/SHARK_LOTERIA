@@ -1,98 +1,332 @@
+import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
-import { LayoutDashboard, Ticket, ChartBar, History, LogOut, User } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { useAuth } from "@/hooks/use-auth";
+import { Button } from "@/components/ui/button";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Menu,
+  Flame,
+  Dice6,
+  Trophy,
+  Brain,
+  Info,
+  Home,
+  Zap,
+  History,
+  BarChart3,
+  Settings,
+  User,
+  TrendingUp,
+  Activity,
+  Target
+} from "lucide-react";
+import sharkLogo from "@assets/Logo Futurista da Shark Loterias_1757013773517.png";
 
-export function Navigation() {
+export default function Navigation() {
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [location] = useLocation();
-  const { user, logout } = useAuth();
+
+  // Hide body scroll when menu is open
+  useEffect(() => {
+    if (isMobileMenuOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isMobileMenuOpen]);
 
   const navItems = [
-    { href: "/", label: "Dashboard", icon: LayoutDashboard },
-    { href: "/generate", label: "Generator", icon: Ticket },
-    { href: "/results", label: "Analysis", icon: ChartBar },
-    { href: "/history", label: "My History", icon: History },
+    {
+      href: "/",
+      label: "Página Inicial",
+      icon: Home,
+      emoji: "🏠",
+      description: "Painel principal com visão geral"
+    },
+    {
+      href: "/heat-map",
+      label: "Mapa de Calor",
+      icon: Flame,
+      emoji: "🔥❄️♨️",
+      description: "Análise de números quentes e frios"
+    },
+    {
+      href: "/generator",
+      label: "Gerador",
+      icon: Dice6,
+      emoji: "🔮",
+      description: "Gerar jogos inteligentes"
+    },
+    {
+      href: "/results",
+      label: "Resultados",
+      icon: Trophy,
+      emoji: "📊",
+      description: "Histórico de sorteios e prêmios"
+    },
+    {
+      href: "/ai-analysis",
+      label: "IA Análises",
+      icon: Brain,
+      emoji: "🤖",
+      description: "Análises avançadas com inteligência artificial"
+    },
+    {
+      href: "/ai-metrics",
+      label: "Métricas IA",
+      icon: BarChart3,
+      color: "from-blue-500 to-cyan-500",
+      description: "Performance dos modelos Multi-IA",
+      tooltip: "Dashboard de métricas avançadas"
+    },
+    {
+      href: "/information",
+      label: "Informações",
+      icon: Info,
+      emoji: "📚",
+      description: "Guia completo das modalidades"
+    }
+  ];
+
+  const quickActions = [
+    {
+      action: () => window.location.href = "/generator",
+      label: "Gerar Jogos Rápido",
+      icon: Zap,
+      variant: "primary" as const,
+      tooltip: "Gerar jogos com IA instantaneamente"
+    },
+    {
+      action: () => window.location.href = "/results",
+      label: "Ver Resultados",
+      icon: History,
+      variant: "secondary" as const,
+      tooltip: "Verificar últimos resultados"
+    },
+    {
+      action: () => window.location.href = "/heat-map",
+      label: "Análise Rápida",
+      icon: TrendingUp,
+      variant: "outline" as const,
+      tooltip: "Visualizar tendências dos números"
+    },
   ];
 
   return (
-    <aside className="fixed left-0 top-0 h-full w-64 bg-card/80 backdrop-blur-xl border-r border-white/5 hidden md:flex flex-col z-50">
-      <div className="p-8">
-        <h1 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary font-display italic tracking-tighter">
-          SHARK<span className="text-white block text-sm font-normal tracking-widest not-italic mt-1">LOTERIA 3050</span>
-        </h1>
-      </div>
+    <>
+      {/* Header */}
+      <header className="relative z-50 bg-transparent text-white">
+        <div className="container mx-auto px-6 py-2 relative">
+          <div className="flex items-center justify-between">
+            {/* Logo Central */}
+            <div className="flex-1 flex justify-center items-start -mt-2">
+              <Link href="/" className="flex items-center justify-center">
+                <div className="w-24 h-24">
+                  <img
+                    src={sharkLogo}
+                    alt="Shark Loterias Logo"
+                    className="w-full h-full object-contain"
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none';
+                      e.currentTarget.parentElement!.innerHTML = '<span class="text-4xl">🦈</span>';
+                    }}
+                  />
+                </div>
+              </Link>
+            </div>
 
-      <nav className="flex-1 px-4 space-y-2">
-        {navItems.map((item) => {
-          const isActive = location === item.href;
-          return (
-            <Link key={item.href} href={item.href} className={cn(
-              "flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 font-ui font-medium tracking-wide",
-              isActive 
-                ? "bg-primary/10 text-primary border border-primary/20 shadow-[0_0_15px_rgba(0,255,255,0.1)]" 
-                : "text-muted-foreground hover:text-white hover:bg-white/5"
-            )}>
-              <item.icon className={cn("w-5 h-5", isActive && "animate-pulse")} />
-              {item.label}
-            </Link>
-          );
-        })}
-      </nav>
+            {/* Navigation Buttons - Desktop */}
+            <div className="hidden lg:flex items-center space-x-6">
+              <Button
+                variant="ghost"
+                className="text-white hover:bg-white/20 font-medium px-6 py-3 text-sm"
+                onClick={() => window.location.href = "/ai-analysis"}
+                data-testid="nav-analysis"
+              >
+                ANÁLISE
+              </Button>
+              <Button
+                variant="ghost"
+                className="text-white hover:bg-white/20 font-medium px-6 py-3 text-sm"
+                onClick={() => window.location.href = "/generator"}
+                data-testid="nav-play"
+              >
+                JOGAR
+              </Button>
+              <Button
+                variant="ghost"
+                className="text-white hover:bg-white/20 font-medium px-6 py-3 text-sm"
+                onClick={() => window.location.href = "/results"}
+                data-testid="nav-results"
+              >
+                RESULTADOS
+              </Button>
+            </div>
 
-      <div className="p-4 mt-auto border-t border-white/5">
-        <div className="flex items-center gap-3 px-4 py-3 mb-2 rounded-xl bg-black/20">
-          <div className="w-8 h-8 rounded-full bg-secondary/20 flex items-center justify-center text-secondary border border-secondary/30">
-            <User className="w-4 h-4" />
+            {/* Menu Button - Top Right */}
+            <div className="flex items-center">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-white hover:bg-white/20"
+                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                data-testid="menu-toggle"
+              >
+                <Menu className="h-5 w-5" />
+              </Button>
+            </div>
           </div>
-          <div className="flex-1 overflow-hidden">
-            <p className="text-sm font-medium text-white truncate">{user?.firstName || 'User'}</p>
-            <p className="text-xs text-muted-foreground truncate font-mono">ID: {user?.id?.slice(0,6)}...</p>
+
+          {/* Secondary Navigation Bar - Desktop Only */}
+          <div className="hidden lg:flex items-center justify-between mt-2 pt-2 border-t border-border/30">
+            <div className="flex items-center space-x-2 text-xs text-muted-foreground">
+              <div className="flex items-center space-x-1 bg-neon-green/10 text-neon-green px-2 py-1 rounded-full border border-neon-green/30">
+                <div className="w-1.5 h-1.5 bg-neon-green rounded-full"></div>
+                <span className="font-mono">Dados Oficiais Caixa</span>
+              </div>
+              <div className="flex items-center space-x-1 bg-black/20 text-secondary px-2 py-1 rounded-full border border-secondary/30">
+                <Brain className="w-3 h-3" />
+                <span className="font-mono">IA Ativa</span>
+              </div>
+              <div className="flex items-center space-x-1 bg-black/20 text-accent px-2 py-1 rounded-full border border-accent/30">
+                <BarChart3 className="w-3 h-3" />
+                <span className="font-mono">Análise em Tempo Real</span>
+              </div>
+            </div>
+
+            {/* Current Page Info */}
+            <div className="text-xs text-muted-foreground">
+              {navItems.find(item => item.href === location)?.description || "Navegação principal"}
+            </div>
           </div>
         </div>
-        
-        <button 
-          onClick={() => logout()}
-          className="flex w-full items-center gap-3 px-4 py-3 rounded-xl text-destructive hover:bg-destructive/10 transition-colors font-ui font-medium"
+      </header>
+
+      {/* Full Screen Menu Overlay */}
+      {isMobileMenuOpen && (
+        <div
+          className="fixed inset-0 bg-black/95 z-[60] backdrop-blur-md"
+          data-testid="menu-overlay"
         >
-          <LogOut className="w-5 h-5" />
-          Logout system
-        </button>
-      </div>
-      
-      <div className="p-4 text-center">
-        <p className="text-[10px] text-muted-foreground/50 font-mono tracking-wider uppercase">
-          Powered by Shark062
-        </p>
-      </div>
-    </aside>
-  );
-}
+          <div className="container mx-auto px-4 py-8 h-full overflow-y-auto">
+            {/* Menu Header */}
+            <div className="flex items-center justify-between mb-8">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-primary/20 rounded-3xl flex items-center justify-center border border-primary/50">
+                  <span className="text-xl">🦈</span>
+                </div>
+                <div>
+                  <h2 className="text-lg font-bold neon-text text-primary">Shark Loterias</h2>
+                  <p className="text-xs text-foreground/70">Menu Principal</p>
+                </div>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="text-white hover:text-primary text-2xl font-bold rounded-3xl"
+                data-testid="menu-close-button"
+              >
+                ✕
+              </Button>
+            </div>
 
-export function MobileNav() {
-  const [location] = useLocation();
-  
-  const navItems = [
-    { href: "/", icon: LayoutDashboard },
-    { href: "/generate", icon: Ticket },
-    { href: "/results", icon: ChartBar },
-    { href: "/history", icon: History },
-  ];
+            {/* Navigation Menu */}
+            <nav className="space-y-4">
+              {navItems.map((item) => {
+                const Icon = item.icon;
+                const isActive = location === item.href;
 
-  return (
-    <div className="fixed bottom-0 left-0 right-0 bg-card/90 backdrop-blur-xl border-t border-white/10 md:hidden z-50 pb-safe">
-      <div className="flex justify-around items-center p-4">
-        {navItems.map((item) => {
-          const isActive = location === item.href;
-          return (
-            <Link key={item.href} href={item.href} className={cn(
-              "flex flex-col items-center gap-1 p-2 rounded-lg transition-colors",
-              isActive ? "text-primary" : "text-muted-foreground"
-            )}>
-              <item.icon className={cn("w-6 h-6", isActive && "drop-shadow-[0_0_8px_rgba(0,255,255,0.5)]")} />
-            </Link>
-          );
-        })}
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={`flex items-center justify-between p-4 rounded-3xl group ${
+                      isActive
+                        ? "text-primary bg-primary/20 border border-primary/50"
+                        : "text-foreground/80 hover:text-primary hover:bg-primary/10 border border-foreground/10 hover:border-primary/30"
+                    }`}
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    data-testid={`nav-link-${item.label.toLowerCase().replace(/\s+/g, '-')}`}
+                  >
+                    <div className="flex items-center space-x-4">
+                      <div className={`w-10 h-10 rounded-3xl flex items-center justify-center border ${
+                        isActive
+                          ? 'bg-primary/30 text-primary border-primary/50'
+                          : 'bg-foreground/10 text-foreground/70 border-foreground/20 group-hover:bg-primary/20 group-hover:text-primary group-hover:border-primary/40'
+                      }`}>
+                        <Icon className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <div className="font-medium text-lg">{item.label}</div>
+                        <div className="text-xs opacity-70">{item.description}</div>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <span className="text-lg">{item.emoji}</span>
+                      <span className="text-xs">→</span>
+                    </div>
+                  </Link>
+                );
+              })}
+            </nav>
+          </div>
+        </div>
+      )}
+
+      {/* Quick Actions - Desktop Only */}
+      <div className="hidden lg:block fixed top-32 right-6 z-40">
+        <div className="space-y-3">
+          <div className="text-xs text-muted-foreground text-center mb-2 font-mono">
+            ⚡ Ações Rápidas
+          </div>
+          {quickActions.map((action, index) => {
+            const Icon = action.icon;
+            return (
+              <Button
+                key={index}
+                onClick={action.action}
+                variant={action.variant === "primary" ? "default" : action.variant as any}
+                size="sm"
+                className={`w-full shadow-lg group relative rounded-3xl ${
+                  action.variant === "primary"
+                    ? "bg-black/25"
+                    : action.variant === "secondary"
+                    ? "bg-black/25"
+                    : "border-2 border-dashed border-primary/30 hover:border-primary hover:bg-black/25"
+                }`}
+                data-testid={`quick-action-${action.label.toLowerCase().replace(/\s+/g, '-')}`}
+                title={action.tooltip}
+              >
+                <Icon className="h-4 w-4 mr-2" />
+                {action.label}
+
+                {/* Tooltip */}
+                <div className="absolute right-full mr-3 top-1/2 -translate-y-1/2 bg-card border border-border/50 rounded-lg px-3 py-2 text-xs text-foreground opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap backdrop-blur-sm">
+                  {action.tooltip}
+                  <div className="absolute left-full top-1/2 -translate-y-1/2 border-4 border-transparent border-l-border/50"></div>
+                </div>
+              </Button>
+            );
+          })}
+
+          {/* Status Indicator */}
+          <div className="mt-4 p-3 bg-black/25 border border-border/50 rounded-3xl backdrop-blur-sm">
+            <div className="text-xs text-center space-y-1">
+              <div className="flex items-center justify-center space-x-1 text-neon-green">
+                <div className="w-2 h-2 bg-neon-green rounded-full"></div>
+                <span>Sistema Online</span>
+              </div>
+              <div className="text-muted-foreground">
+                IA Ativa • Dados Atualizados
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
-    </div>
+    </>
   );
 }
