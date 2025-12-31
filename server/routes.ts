@@ -20,7 +20,7 @@ import { authService } from "./services/authService";
 import { authMiddleware, premiumOnly } from "./middleware/authMiddleware";
 import type { AuthRequest } from "./middleware/authMiddleware";
 
-export async function registerRoutes(app: Express): Promise<Server> {
+export async function registerRoutes(app: Express): Promise<void> {
   // Auth middleware
   await setupAuth(app);
 
