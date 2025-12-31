@@ -34,6 +34,9 @@ import {
 import type { UserGame, LotteryType } from "@/types/lottery";
 import BettingPlatformIntegration from "@/components/BettingPlatformIntegration";
 
+import { jsPDF } from "jspdf";
+import sharkWatermark from "@assets/cyberpunk-shark-icon_1758467073072_1767221738926.png";
+
 const generateGameSchema = z.object({
   lotteryId: z.string().min(1, "Selecione uma modalidade"),
   numbersCount: z.number().min(1, "Quantidade de dezenas inválida"),
@@ -57,6 +60,87 @@ export default function Generator() {
   const [selectedNumbers, setSelectedNumbers] = useState<number[]>([]);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  // Clear all generated games
+  const clearGeneratedGames = () => {
+    setGeneratedGames([]);
+    toast({
+      title: "Jogos Limpos!",
+      description: "Todos os jogos gerados foram removidos.",
+    });
+  };
+
+  const exportToPDF = () => {
+    try {
+      const doc = new jsPDF();
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const pageHeight = doc.internal.pageSize.getHeight();
+      
+      // Add Watermark
+      const img = new Image();
+      img.src = sharkWatermark;
+      
+      // Wait for image to load (simple approach for this turn)
+      const addContent = () => {
+        // Watermark - Large and centered
+        doc.saveGraphicsState();
+        doc.setGState(new (doc as any).GState({ opacity: 0.15 }));
+        const imgWidth = 150;
+        const imgHeight = 150;
+        doc.addImage(img, 'PNG', (pageWidth - imgWidth) / 2, (pageHeight - imgHeight) / 2, imgWidth, imgHeight);
+        doc.restoreGraphicsState();
+
+        // Content
+        doc.setFontSize(22);
+        doc.setTextColor(0, 0, 0);
+        doc.text("🦈 SHARK LOTO - Jogos Gerados", pageWidth / 2, 20, { align: "center" });
+        
+        doc.setFontSize(12);
+        doc.text(`Modalidade: ${selectedLottery?.displayName || 'Loteria'}`, 20, 40);
+        doc.text(`Data: ${new Date().toLocaleString('pt-BR')}`, 20, 47);
+        doc.text(`Estratégia: ${form.getValues('strategy') || 'mista'}`, 20, 54);
+        doc.text(`Total de jogos: ${generatedGames.length}`, 20, 61);
+
+        doc.setLineWidth(0.5);
+        doc.line(20, 65, pageWidth - 20, 65);
+
+        let yPos = 75;
+        generatedGames.forEach((game, index) => {
+          if (yPos > pageHeight - 20) {
+            doc.addPage();
+            yPos = 20;
+          }
+          const gameText = `Jogo ${(index + 1).toString().padStart(2, '0')}: ${game.numbers.map(n => n.toString().padStart(2, '0')).sort().join(' - ')}`;
+          doc.text(gameText, 20, yPos);
+          yPos += 10;
+        });
+
+        doc.setFontSize(10);
+        doc.setTextColor(150, 150, 150);
+        doc.text("Powered by Shark Loterias", pageWidth / 2, pageHeight - 10, { align: "center" });
+
+        doc.save(`shark-loto-jogos-${Date.now()}.pdf`);
+        
+        toast({
+          title: "PDF Gerado!",
+          description: "Seus jogos foram exportados para PDF com sucesso.",
+        });
+      };
+
+      if (img.complete) {
+        addContent();
+      } else {
+        img.onload = addContent;
+      }
+    } catch (error) {
+      console.error("Erro ao gerar PDF:", error);
+      toast({
+        title: "Erro ao Exportar",
+        description: "Não foi possível gerar o PDF.",
+        variant: "destructive",
+      });
+    }
+  };
 
   // Parse URL parameters
   const urlParams = new URLSearchParams(location.split('?')[1] || '');
