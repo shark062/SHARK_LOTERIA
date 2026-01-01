@@ -141,7 +141,7 @@ export const LOTTERY_CONFIGS: Record<string, LotteryConfig> = {
     maxNumbers: 21,
     totalNumbers: 10,
     drawDays: ['Monday', 'Wednesday', 'Friday'],
-    drawTime: '15:00',
+    drawTime: '20:00',
     isActive: true,
     apiEndpoint: 'supersete',
     prizeCategories: [
