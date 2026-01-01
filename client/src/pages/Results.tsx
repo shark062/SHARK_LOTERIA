@@ -189,7 +189,7 @@ export default function Results() {
           <CardContent>
             <div className="aspect-video w-full rounded-lg overflow-hidden bg-black/20">
               <iframe
-                src="https://www.youtube.com/embed/BuVN7GxUKWE?autoplay=1&mute=1"
+                src="https://www.youtube.com/embed?listType=user_uploads&list=canalcaixa&autoplay=1&mute=1"
                 title="Sorteios da Caixa ao Vivo"
                 className="w-full h-full"
                 frameBorder="0"
@@ -229,18 +229,11 @@ export default function Results() {
                   </div>
                 </div>
 
-
-
                 {/* General Draw Times */}
                 <div className="text-center border-t border-border/30 pt-3">
                   <div className="text-xs text-muted-foreground mb-2">Horários dos Sorteios</div>
-                  <div className="grid grid-cols-2 gap-2 text-xs">
-                    <div>
-                      <span className="text-accent font-semibold">Super Sete:</span> 20:00h
-                    </div>
-                    <div>
-                      <span className="text-primary font-semibold">Demais:</span> 20:00h
-                    </div>
+                  <div className="text-xs">
+                    <span className="text-primary font-semibold">Todas as modalidades:</span> 21:00h
                   </div>
                 </div>
               </div>
