@@ -225,8 +225,8 @@ export const LOTTERY_CONFIGS: Record<string, LotteryConfig> = {
     minNumbers: 14,
     maxNumbers: 14,
     totalNumbers: 3,
-    drawDays: ['Saturday'],
-    drawTime: '20:00',
+    drawDays: ['Monday'],
+    drawTime: '17:00',
     isActive: true,
     apiEndpoint: 'loteca',
     prizeCategories: [
