@@ -39,7 +39,7 @@ export const LOTTERY_CONFIGS: Record<string, LotteryConfig> = {
     minNumbers: 6,
     maxNumbers: 15,
     totalNumbers: 60,
-    drawDays: ['Wednesday', 'Saturday'],
+    drawDays: ['Tuesday', 'Thursday', 'Saturday'],
     drawTime: '20:00',
     isActive: true,
     apiEndpoint: 'megasena',
