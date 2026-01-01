@@ -40,7 +40,7 @@ export const LOTTERY_CONFIGS: Record<string, LotteryConfig> = {
     maxNumbers: 15,
     totalNumbers: 60,
     drawDays: ['Tuesday', 'Thursday', 'Saturday'],
-    drawTime: '20:00',
+    drawTime: '21:00',
     isActive: true,
     apiEndpoint: 'megasena',
     prizeCategories: [
@@ -59,7 +59,7 @@ export const LOTTERY_CONFIGS: Record<string, LotteryConfig> = {
     maxNumbers: 20,
     totalNumbers: 25,
     drawDays: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
-    drawTime: '20:00',
+    drawTime: '21:00',
     isActive: true,
     apiEndpoint: 'lotofacil',
     prizeCategories: [
@@ -80,7 +80,7 @@ export const LOTTERY_CONFIGS: Record<string, LotteryConfig> = {
     maxNumbers: 15,
     totalNumbers: 80,
     drawDays: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
-    drawTime: '20:00',
+    drawTime: '21:00',
     isActive: true,
     apiEndpoint: 'quina',
     prizeCategories: [
@@ -98,8 +98,8 @@ export const LOTTERY_CONFIGS: Record<string, LotteryConfig> = {
     minNumbers: 50,
     maxNumbers: 50,
     totalNumbers: 100,
-    drawDays: ['Tuesday', 'Friday'],
-    drawTime: '20:00',
+    drawDays: ['Monday', 'Wednesday', 'Friday'],
+    drawTime: '21:00',
     isActive: true,
     apiEndpoint: 'lotomania',
     prizeCategories: [
@@ -121,7 +121,7 @@ export const LOTTERY_CONFIGS: Record<string, LotteryConfig> = {
     maxNumbers: 15,
     totalNumbers: 50,
     drawDays: ['Tuesday', 'Thursday', 'Saturday'],
-    drawTime: '20:00',
+    drawTime: '21:00',
     isActive: true,
     apiEndpoint: 'duplasena',
     prizeCategories: [
@@ -140,8 +140,8 @@ export const LOTTERY_CONFIGS: Record<string, LotteryConfig> = {
     minNumbers: 7,
     maxNumbers: 21,
     totalNumbers: 10,
-    drawDays: ['Monday', 'Wednesday', 'Friday'],
-    drawTime: '20:00',
+    drawDays: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
+    drawTime: '21:00',
     isActive: true,
     apiEndpoint: 'supersete',
     prizeCategories: [
@@ -162,7 +162,7 @@ export const LOTTERY_CONFIGS: Record<string, LotteryConfig> = {
     maxNumbers: 12,
     totalNumbers: 50,
     drawDays: ['Wednesday', 'Saturday'],
-    drawTime: '20:00',
+    drawTime: '21:00',
     isActive: true,
     apiEndpoint: 'maismilionaria',
     prizeCategories: [
@@ -182,7 +182,7 @@ export const LOTTERY_CONFIGS: Record<string, LotteryConfig> = {
     maxNumbers: 10,
     totalNumbers: 80,
     drawDays: ['Tuesday', 'Thursday', 'Saturday'],
-    drawTime: '20:00',
+    drawTime: '21:00',
     isActive: true,
     apiEndpoint: 'timemania',
     prizeCategories: [
@@ -203,7 +203,7 @@ export const LOTTERY_CONFIGS: Record<string, LotteryConfig> = {
     maxNumbers: 15,
     totalNumbers: 31,
     drawDays: ['Tuesday', 'Thursday', 'Saturday'],
-    drawTime: '20:00',
+    drawTime: '21:00',
     isActive: true,
     apiEndpoint: 'diadesorte',
     prizeCategories: [
