@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import Navigation from "@/components/Navigation";
 import CelebrationAnimation from "@/components/CelebrationAnimation";
+import LiveEmbed from "@/components/LiveEmbed";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -188,15 +189,7 @@ export default function Results() {
           </CardHeader>
           <CardContent>
             <div className="aspect-video w-full rounded-lg overflow-hidden bg-black/20">
-              <iframe
-                src="https://www.youtube.com/embed/live_stream?channel=UCRwcRJfHIY-1sKXEh2DRjNQ&autoplay=1&mute=1"
-                title="Sorteios da Caixa ao Vivo"
-                className="w-full h-full"
-                frameBorder="0"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                allowFullScreen
-                data-testid="live-draw-video"
-              />
+              <LiveEmbed channelId="UCPbhr02AfVb2nd5pm12BxTw" />
             </div>
             <div className="mt-4 space-y-3">
               <div className="text-center">
