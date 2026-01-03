@@ -133,7 +133,7 @@ export default function Results() {
           docAny.saveGraphicsState();
           const GState = (jsPDF as any).GState || docAny.GState;
           if (GState) {
-            docAny.setGState(new GState({ opacity: 0.8 }));
+            docAny.setGState(new GState({ opacity: 0.3 }));
           }
           doc.addImage(
             logoPng, 
