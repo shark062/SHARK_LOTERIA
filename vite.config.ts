@@ -28,18 +28,14 @@ export default defineConfig({
     include: ['react', 'react-dom', 'wouter', '@tanstack/react-query', 'framer-motion', 'lucide-react'],
     exclude: ['@replit/vite-plugin-runtime-error-modal']
   },
-  server: {
-    hmr: {
-      overlay: false
-    },
-    allowedHosts: true
-  },
   root: path.resolve(import.meta.dirname, "client"),
   build: {
     outDir: path.resolve(import.meta.dirname, "dist/public"),
     emptyOutDir: true,
   },
   server: {
+    host: "0.0.0.0",
+    port: 5000,
     fs: {
       strict: true,
       deny: ["**/.*"],
