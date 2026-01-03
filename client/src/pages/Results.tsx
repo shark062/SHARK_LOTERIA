@@ -279,7 +279,7 @@ export default function Results() {
           </CardContent>
         </Card>
       </main>
-      <CelebrationAnimation show={showCelebration} prizeAmount={celebrationPrize} onComplete={() => setShowCelebration(false)} />
+      <CelebrationAnimation isVisible={showCelebration} prizeAmount={celebrationPrize} onComplete={() => setShowCelebration(false)} />
     </div>
   );
 }
