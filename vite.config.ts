@@ -24,6 +24,9 @@ export default defineConfig({
     },
     dedupe: ['react', 'react-dom'],
   },
+  optimizeDeps: {
+    include: ['react', 'react-dom'],
+  },
   root: path.resolve(import.meta.dirname, "client"),
   build: {
     outDir: path.resolve(import.meta.dirname, "dist/public"),

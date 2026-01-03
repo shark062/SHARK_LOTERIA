@@ -1,7 +1,13 @@
-import { createRoot } from "react-dom/client";
+import * as React from "react";
+import * as ReactDOM from "react-dom/client";
 import App from "./App";
 import "./index.css";
 import { ErrorBoundary } from "react-error-boundary";
+
+// @ts-ignore
+window.React = React;
+// @ts-ignore
+window.ReactDOM = ReactDOM;
 
 function ErrorFallback({ error, resetErrorBoundary }: { error: Error; resetErrorBoundary: () => void }) {
   return (
@@ -22,7 +28,10 @@ function ErrorFallback({ error, resetErrorBoundary }: { error: Error; resetError
   );
 }
 
-createRoot(document.getElementById("root")!).render(
+const rootElement = document.getElementById("root");
+if (!rootElement) throw new Error("Failed to find the root element");
+
+ReactDOM.createRoot(rootElement).render(
   <ErrorBoundary FallbackComponent={ErrorFallback}>
     <App />
   </ErrorBoundary>
