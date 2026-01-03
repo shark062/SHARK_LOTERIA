@@ -373,14 +373,14 @@ export default function Generator() {
       <Navigation />
 
       <main className="container mx-auto px-4 py-4">
-        {/* Header */}
-        <div className="text-center mb-4">
-          <h2 className="text-2xl font-bold neon-text text-primary mb-1" data-testid="generator-title">
-            Gerador Inteligente 🔮
-          </h2>
-          <p className="text-sm text-muted-foreground">
-            Gere jogos com estratégias baseadas em IA e análise estatística
-          </p>
+          <div>
+            <h2 className="text-2xl font-bold neon-text text-primary mb-1" data-testid="generator-title">
+              Gerador Inteligente 🔮
+            </h2>
+            <p className="text-sm text-muted-foreground">
+              Gere jogos com estratégias baseadas em IA e análise estatística
+            </p>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
