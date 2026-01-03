@@ -9,6 +9,8 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useLotteryTypes, useUserStats } from "@/hooks/useLotteryData";
+import { jsPDF } from "jspdf";
+import logoPng from "@assets/Logo_Futurista_da_Shark_Loterias_1757013773517-B635QT2F_1767439134606.png";
 import { 
   Trophy, 
   TrendingUp, 
@@ -22,7 +24,9 @@ import {
   Sparkles,
   BarChart3,
   Zap,
-  Clock
+  Clock,
+  Download,
+  FileText
 } from "lucide-react";
 import type { UserGame, NextDrawInfo } from "@/types/lottery";
 
@@ -159,19 +163,102 @@ export default function Results() {
     return prize > bestPrize ? game : best;
   }, null as UserGame | null);
 
+  const exportToPDF = () => {
+    const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+
+    // Adicionar marca d'água
+    const imgWidth = 100;
+    const imgHeight = 100;
+    
+    // Add watermark with low opacity if possible, otherwise just centralize
+    try {
+      doc.addImage(
+        logoPng,
+        "PNG",
+        (pageWidth - imgWidth) / 2,
+        (pageHeight - imgHeight) / 2,
+        imgWidth,
+        imgHeight,
+        undefined,
+        'FAST'
+      );
+    } catch (e) {
+      console.error("Error adding watermark:", e);
+    }
+
+    // Cabeçalho
+    doc.setFontSize(22);
+    doc.setTextColor(0, 150, 255); // Azul Shark
+    doc.text("Shark Loterias - Relatorio de Jogos", pageWidth / 2, 20, { align: "center" });
+
+    doc.setFontSize(12);
+    doc.setTextColor(100, 100, 100);
+    doc.text(`Gerado em: ${new Date().toLocaleString("pt-BR")}`, pageWidth / 2, 30, { align: "center" });
+
+    // Estatísticas
+    doc.setFontSize(16);
+    doc.setTextColor(0, 0, 0);
+    doc.text("Resumo de Performance", 20, 45);
+    
+    doc.setFontSize(12);
+    doc.text(`Total de Jogos: ${userStats?.totalGames || 0}`, 20, 55);
+    doc.text(`Premios Ganhos: ${userStats?.wins || 0}`, 20, 62);
+    doc.text(`Taxa de Acerto: ${userStats?.accuracy || 0}%`, 20, 69);
+    doc.text(`Total Acumulado: R$ ${totalPrizeWon.toFixed(2).replace(".", ",")}`, 20, 76);
+
+    // Lista de Jogos
+    doc.setFontSize(16);
+    doc.text("Historico Detalhado", 20, 90);
+
+    let yPos = 100;
+    filteredGames.forEach((game: any, index: number) => {
+      if (yPos > pageHeight - 40) {
+        doc.addPage();
+        yPos = 20;
+      }
+
+      const prize = parseFloat(game.prizeWon || "0");
+      doc.setFontSize(12);
+      doc.text(`${index + 1}. ${getLotteryName(game.lotteryId)} - Concurso #${game.contestNumber}`, 20, yPos);
+      
+      doc.setFontSize(10);
+      doc.text(`Data: ${new Date(game.createdAt).toLocaleDateString("pt-BR")}`, 20, yPos + 7);
+      doc.text(`Numeros: ${game.selectedNumbers.join(", ")}`, 20, yPos + 14);
+      doc.text(`Acertos: ${game.matches} | Premio: R$ ${prize.toFixed(2).replace(".", ",")}`, 20, yPos + 21);
+      doc.text(`Estrategia: ${game.strategy === "ai" ? "Inteligencia Artificial" : game.strategy}`, 20, yPos + 28);
+
+      yPos += 40;
+    });
+
+    doc.save("Shark_Loterias_Relatorio.pdf");
+  };
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       <Navigation />
 
       <main className="container mx-auto px-4 py-8">
         {/* Header */}
-        <div className="text-center mb-8">
-          <h2 className="text-3xl font-bold neon-text text-primary mb-2" data-testid="results-title">
-            Resultados 📊
-          </h2>
-          <p className="text-muted-foreground">
-            Histórico completo dos seus jogos e prêmios
-          </p>
+        <div className="flex flex-col md:flex-row items-center justify-between mb-8 gap-4">
+          <div className="text-center md:text-left">
+            <h2 className="text-3xl font-bold neon-text text-primary mb-2" data-testid="results-title">
+              Resultados 📊
+            </h2>
+            <p className="text-muted-foreground">
+              Histórico completo dos seus jogos e prêmios
+            </p>
+          </div>
+          
+          <Button 
+            onClick={exportToPDF}
+            className="bg-primary hover:bg-primary/80 text-white flex items-center gap-2"
+            data-testid="button-export-pdf"
+          >
+            <Download className="h-4 w-4" />
+            Exportar Relatório PDF
+          </Button>
         </div>
 
         {/* Live Draw Video */}
