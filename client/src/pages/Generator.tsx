@@ -84,7 +84,7 @@ export default function Generator() {
       const addContent = () => {
         // Watermark - Large and centered
         doc.saveGraphicsState();
-        doc.setGState(new (doc as any).GState({ opacity: 0.15 }));
+        doc.setGState(new (doc as any).GState({ opacity: 0.25 }));
         const imgWidth = 150;
         const imgHeight = 150;
         doc.addImage(img, 'PNG', (pageWidth - imgWidth) / 2, (pageHeight - imgHeight) / 2, imgWidth, imgHeight);
@@ -806,7 +806,17 @@ export default function Generator() {
                       data-testid="export-games-button"
                     >
                       <Download className="h-4 w-4 mr-1" />
-                      Exportar
+                      Exportar TXT
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={exportToPDF}
+                      className="hover:bg-primary/20"
+                      data-testid="export-pdf-button"
+                    >
+                      <Download className="h-4 w-4 mr-1" />
+                      Exportar PDF
                     </Button>
                   </div>
                 )}
