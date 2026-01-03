@@ -174,6 +174,13 @@ export default function Results() {
     
     // Add watermark with low opacity if possible, otherwise just centralize
     try {
+      // Usar um estado gráfico para garantir que a opacidade não afete o resto do documento
+      doc.saveGraphicsState();
+      
+      // Ajustar opacidade para ser bem sutil como fundo (0.05 a 0.1)
+      const gState = new (doc as any).GState({ opacity: 0.05 });
+      doc.setGState(gState);
+      
       doc.addImage(
         logoPng,
         "PNG",
@@ -184,6 +191,8 @@ export default function Results() {
         undefined,
         'FAST'
       );
+      
+      doc.restoreGraphicsState();
     } catch (e) {
       console.error("Error adding watermark:", e);
     }
