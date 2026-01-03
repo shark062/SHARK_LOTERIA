@@ -140,7 +140,7 @@ export default function Home() {
   // Check for recent wins to trigger celebration
   useEffect(() => {
     if (recentGames && recentGames.length > 0) {
-      const latestWin = recentGames.find(game => 
+      const latestWin = (recentGames as any[]).find(game => 
         parseFloat(game.prizeWon || "0") > 0 && 
         new Date(game.createdAt).getTime() > Date.now() - 24 * 60 * 60 * 1000 // Last 24 hours
       );
@@ -148,30 +148,29 @@ export default function Home() {
       if (latestWin && !showCelebration) {
         setCelebrationPrize(`R$ ${latestWin.prizeWon}`);
         setShowCelebration(true);
-        // We removed the glitch effect call that might cause re-renders if not stable
       }
     }
   }, [recentGames, showCelebration]);
 
   // IA Shark analisando dados ao carregar
   useEffect(() => {
-    if (megasenaFrequencies && megasenaFrequencies.length > 0) {
+    if (megasenaFrequencies && (megasenaFrequencies as any[]).length > 0) {
       const randomNumbers = [1, 15, 23, 35, 44, 58]; // Exemplo
-      const analysis = sharkAI.analyzeNumbers(randomNumbers, 'megasena', megasenaFrequencies);
+      const analysis = sharkAI.analyzeNumbers(randomNumbers, 'megasena', megasenaFrequencies as any);
       setSharkAIMessage(analysis.message);
 
       // Registrar análise na gamificação
       gamification.onAnalysisPerformed('megasena', 0.75);
     }
-  }, [megasenaFrequencies]);
+  }, [megasenaFrequencies, sharkAI, gamification]);
 
   // Inicialização da IA Shark com dados de fallback
   useEffect(() => {
-    if (!megasenaFrequencies || megasenaFrequencies.length === 0) {
+    if (!megasenaFrequencies || (megasenaFrequencies as any[]).length === 0) {
       const fallbackAnalysis = sharkAI.analyzeNumbers([1, 15, 23, 35, 44, 58], 'megasena');
       setSharkAIMessage(fallbackAnalysis.message);
     }
-  }, [megasenaFrequencies]);
+  }, [megasenaFrequencies, sharkAI]);
 
   // Funções para controlar as funcionalidades
   const activateSharkMode = () => {
