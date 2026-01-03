@@ -3,6 +3,7 @@ import postgres from "postgres";
 import * as schema from "@shared/schema";
 import { eq, desc, sql, and } from "drizzle-orm";
 import { withRetry } from './utils';
+import { cacheService } from './services/cacheService';
 import type {
   LotteryType,
   LotteryDraw,

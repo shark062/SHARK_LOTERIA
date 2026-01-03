@@ -65,7 +65,10 @@ export const lotteryDraws = pgTable("lottery_draws", {
   winners: jsonb("winners"), // Array of winner objects with prize tiers
   isOfficial: boolean("is_official").default(false),
   createdAt: timestamp("created_at").defaultNow(),
-});
+}, (table) => [
+  index("idx_draws_lottery_date").on(table.lotteryId, table.drawDate),
+  index("idx_draws_contest").on(table.lotteryId, table.contestNumber),
+]);
 
 // User generated games table
 export const userGames = pgTable("user_games", {
@@ -79,7 +82,10 @@ export const userGames = pgTable("user_games", {
   matches: integer("matches").default(0),
   prizeWon: decimal("prize_won", { precision: 15, scale: 2 }).default("0"),
   createdAt: timestamp("created_at").defaultNow(),
-});
+}, (table) => [
+  index("idx_user_games_user").on(table.userId),
+  index("idx_user_games_lottery").on(table.lotteryId),
+]);
 
 // Number frequency tracking
 export const numberFrequency = pgTable("number_frequency", {
@@ -92,7 +98,9 @@ export const numberFrequency = pgTable("number_frequency", {
   drawsSinceLastSeen: integer("draws_since_last_seen").default(0),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
-});
+}, (table) => [
+  index("idx_freq_lottery_num").on(table.lotteryId, table.number),
+]);
 
 // AI analysis results
 export const aiAnalysis = pgTable("ai_analysis", {
