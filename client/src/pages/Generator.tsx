@@ -349,83 +349,6 @@ export default function Generator() {
     });
   };
 
-  const exportGames = () => {
-    try {
-      // Gerar conteúdo formatado
-      const timestamp = new Date().toLocaleString('pt-BR');
-      const selectedLotteryName = selectedLottery?.displayName || 'Loteria';
-      
-      const content = [
-        `🦈 SHARK LOTO - Jogos Gerados`,
-        `Modalidade: ${selectedLotteryName}`,
-        `Data: ${timestamp}`,
-        `Estratégia: ${form.watch('strategy') || 'mixed'}`,
-        `Total de jogos: ${generatedGames.length}`,
-        ``,
-        `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`,
-        ``,
-        ...generatedGames.map((game, index) => 
-          `Jogo ${(index + 1).toString().padStart(2, '0')}: ${game.numbers.map(n => n.toString().padStart(2, '0')).join(' - ')}`
-        ),
-        ``,
-        `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`,
-        `Powered by Shark062`
-      ].join('\n');
-
-      // Criar blob e URL
-      const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
-      const url = URL.createObjectURL(blob);
-      
-      // Criar elemento de download
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `shark-loto-jogos-${Date.now()}.txt`;
-      
-      // Adicionar ao DOM (necessário para alguns navegadores)
-      link.style.display = 'none';
-      document.body.appendChild(link);
-      
-      // Tentar download
-      link.click();
-      
-      // Aguardar um momento antes de limpar (importante para mobile)
-      setTimeout(() => {
-        try {
-          if (document.body.contains(link)) {
-            document.body.removeChild(link);
-          }
-        } catch (e) {
-          console.warn('Erro ao remover elemento de download:', e);
-        }
-        URL.revokeObjectURL(url);
-      }, 100);
-
-      toast({
-        title: "✅ Exportado com sucesso!",
-        description: `${generatedGames.length} jogo(s) salvos na memória do dispositivo.`,
-      });
-    } catch (error) {
-      console.error('Erro ao exportar jogos:', error);
-      
-      // Fallback: copiar para área de transferência
-      const fallbackContent = generatedGames.map((game, index) =>
-        `Jogo ${index + 1}: ${game.numbers.join(' - ')}`
-      ).join('\n');
-      
-      navigator.clipboard.writeText(fallbackContent).then(() => {
-        toast({
-          title: "Jogos copiados!",
-          description: "Os jogos foram copiados para a área de transferência. Cole em um aplicativo de texto para salvar.",
-        });
-      }).catch(() => {
-        toast({
-          title: "Erro ao exportar",
-          description: "Não foi possível exportar os jogos. Tente novamente.",
-          variant: "destructive",
-        });
-      });
-    }
-  };
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -799,20 +722,8 @@ export default function Generator() {
                 {generatedGames.length > 0 && (
                   <div className="flex gap-2">
                     <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={exportGames}
-                      className="hover:bg-primary/20"
-                      data-testid="export-games-button"
-                    >
-                      <Download className="h-4 w-4 mr-1" />
-                      Exportar TXT
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
                       onClick={exportToPDF}
-                      className="hover:bg-primary/20"
+                      className="bg-primary hover:bg-primary/80 text-white flex items-center gap-2"
                       data-testid="export-pdf-button"
                     >
                       <Download className="h-4 w-4 mr-1" />
