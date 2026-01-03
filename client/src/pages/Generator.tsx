@@ -144,7 +144,7 @@ export default function Generator() {
         yPos += 35;
       });
 
-      doc.save("Shark_Loterias_Jogos_Gerados.pdf");
+      doc.save("Shark_Loterias_Relatorio.pdf");
       
       toast({
         title: "PDF Gerado!",
