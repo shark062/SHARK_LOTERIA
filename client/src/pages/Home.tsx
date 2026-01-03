@@ -148,10 +148,10 @@ export default function Home() {
       if (latestWin && !showCelebration) {
         setCelebrationPrize(`R$ ${latestWin.prizeWon}`);
         setShowCelebration(true);
-        cyberpunkEffects.triggerGlitch(3000); // Efeito visual
+        // We removed the glitch effect call that might cause re-renders if not stable
       }
     }
-  }, [recentGames, showCelebration, cyberpunkEffects]);
+  }, [recentGames, showCelebration]);
 
   // IA Shark analisando dados ao carregar
   useEffect(() => {
@@ -163,7 +163,7 @@ export default function Home() {
       // Registrar análise na gamificação
       gamification.onAnalysisPerformed('megasena', 0.75);
     }
-  }, [megasenaFrequencies, sharkAI, gamification]);
+  }, [megasenaFrequencies]);
 
   // Inicialização da IA Shark com dados de fallback
   useEffect(() => {
@@ -171,7 +171,7 @@ export default function Home() {
       const fallbackAnalysis = sharkAI.analyzeNumbers([1, 15, 23, 35, 44, 58], 'megasena');
       setSharkAIMessage(fallbackAnalysis.message);
     }
-  }, [sharkAI]);
+  }, [megasenaFrequencies]);
 
   // Funções para controlar as funcionalidades
   const activateSharkMode = () => {
