@@ -25,7 +25,14 @@ export default defineConfig({
     dedupe: ['react', 'react-dom'],
   },
   optimizeDeps: {
-    include: ['react', 'react-dom'],
+    include: ['react', 'react-dom', 'wouter', '@tanstack/react-query', 'framer-motion', 'lucide-react'],
+    exclude: ['@replit/vite-plugin-runtime-error-modal']
+  },
+  server: {
+    hmr: {
+      overlay: false
+    },
+    allowedHosts: true
   },
   root: path.resolve(import.meta.dirname, "client"),
   build: {
