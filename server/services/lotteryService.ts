@@ -446,38 +446,41 @@ class LotteryService {
         throw new Error('Unable to get next draw information');
       }
 
-      // Ensure we're not generating for already drawn contests
-      const latestDraws = await storage.getLatestDraws(params.lotteryId, 1);
-      if (latestDraws.length > 0 && nextDraw.contestNumber <= latestDraws[0].contestNumber) {
-        throw new Error('Cannot generate games for already drawn contests');
-      }
-
       const games: InsertUserGame[] = [];
+      const generatedSequences = new Set<string>();
 
       // Generate games based on strategy
       for (let i = 0; i < params.gamesCount; i++) {
         let selectedNumbers: number[];
+        let attempts = 0;
 
-        if (params.strategy === 'ai') {
-          // Passar índice único para cada jogo
-          selectedNumbers = await this.generateAINumbers(params.lotteryId, params.numbersCount, lottery.totalNumbers, i);
-        } else {
-          selectedNumbers = await this.generateNumbers(params.lotteryId, params.numbersCount, params.strategy, lottery, i);
-        }
+        do {
+          attempts++;
+          if (params.strategy === 'ai') {
+            selectedNumbers = await this.generateAINumbers(params.lotteryId, params.numbersCount, lottery.totalNumbers, i + attempts);
+          } else {
+            selectedNumbers = await this.generateNumbers(params.lotteryId, params.numbersCount, params.strategy, lottery, i + attempts);
+          }
+          selectedNumbers.sort((a, b) => a - b);
+          const sequenceKey = selectedNumbers.join(',');
+          
+          if (!generatedSequences.has(sequenceKey) || attempts > 10) {
+            generatedSequences.add(sequenceKey);
+            break;
+          }
+        } while (attempts <= 10);
 
         const game: InsertUserGame = {
           userId: params.userId,
           lotteryId: params.lotteryId,
-          selectedNumbers: selectedNumbers.sort((a, b) => a - b),
+          selectedNumbers: selectedNumbers,
           contestNumber: nextDraw.contestNumber,
           strategy: params.strategy,
-          matches: 0, // Will be updated when draw results are available
-          prizeWon: "0.00", // Will be updated when draw results are available
+          matches: 0,
+          prizeWon: "0.00",
         };
 
         games.push(game);
-
-        // Save to database
         await storage.createUserGame(game);
       }
 
@@ -491,7 +494,7 @@ class LotteryService {
   private async generateNumbers(lotteryId: string, count: number, strategy: 'hot' | 'cold' | 'mixed', config: any, gameIndex: number = 0): Promise<number[]> {
     try {
       const frequencies = await storage.getNumberFrequencies(lotteryId);
-      const latestDraws = await storage.getLatestDraws(lotteryId, 50);
+      const latestDraws = await storage.getLatestDraws(lotteryId, 100); // Aumentado para 100 para melhor análise
 
       if (frequencies.length === 0) {
         console.log(`No frequency data for ${lotteryId}, using intelligent random generation`);
@@ -500,44 +503,55 @@ class LotteryService {
 
       // Análise estatística avançada
       const statisticalAnalysis = this.performStatisticalAnalysis(frequencies, latestDraws, config.totalNumbers);
-      const patternAnalysis = this.analyzeNumberPatterns(latestDraws, config.totalNumbers);
-      const cyclicalAnalysis = this.analyzeCyclicalTrends(latestDraws, config.totalNumbers);
-
+      
       let numbers: number[] = [];
+      let attempts = 0;
+      const maxAttempts = 50;
 
-      switch (strategy) {
-        case 'hot':
-          // Select from hot numbers com variação baseada no gameIndex
-          const selectedHot = this.selectRandom(statisticalAnalysis.hot.map((f: any) => f.number), count, gameIndex);
-          numbers.push(...selectedHot);
-          break;
+      while (numbers.length < count && attempts < maxAttempts) {
+        attempts++;
+        let candidate: number;
 
-        case 'cold':
-          // Select from cold numbers com variação baseada no gameIndex
-          const selectedCold = this.selectRandom(statisticalAnalysis.cold.map((f: any) => f.number), count, gameIndex);
-          numbers.push(...selectedCold);
-          break;
+        if (strategy === 'hot') {
+          const pool = statisticalAnalysis.hot.map((f: any) => f.number);
+          candidate = pool[Math.floor(Math.random() * pool.length)];
+        } else if (strategy === 'cold') {
+          const pool = statisticalAnalysis.cold.map((f: any) => f.number);
+          candidate = pool[Math.floor(Math.random() * pool.length)];
+        } else {
+          // Mixed strategy logic
+          const rand = Math.random();
+          let pool;
+          if (rand < 0.40) pool = statisticalAnalysis.hot.map((f: any) => f.number);
+          else if (rand < 0.75) pool = statisticalAnalysis.warm.map((f: any) => f.number);
+          else pool = statisticalAnalysis.cold.map((f: any) => f.number);
+          candidate = pool[Math.floor(Math.random() * pool.length)];
+        }
 
-        case 'mixed':
-        default:
-          // Mix hot, warm, and cold numbers (40% hot, 35% warm, 25% cold)
-          const hotCount = Math.floor(count * 0.40);
-          const warmCount = Math.floor(count * 0.35);
-          const coldCount = count - hotCount - warmCount;
-
-          const mixedHot = this.selectRandom(statisticalAnalysis.hot.map((f: any) => f.number), hotCount, gameIndex);
-          const mixedWarm = this.selectRandom(statisticalAnalysis.warm.map((f: any) => f.number), warmCount, gameIndex + 1);
-          const mixedCold = this.selectRandom(statisticalAnalysis.cold.map((f: any) => f.number), coldCount, gameIndex + 2);
-
-          numbers.push(...mixedHot, ...mixedWarm, ...mixedCold);
-          break;
+        if (!numbers.includes(candidate) && this.isValidAddition(numbers, candidate, config.totalNumbers)) {
+          // Adicionado: Verificação contra sequências históricas e duplicidade futura
+          const tempSelection = [...numbers, candidate].sort((a, b) => a - b);
+          
+          // Se o jogo estiver quase completo, validar contra histórico
+          if (tempSelection.length === count) {
+            const isDuplicate = latestDraws.some(draw => 
+              draw.drawnNumbers.length === count && 
+              draw.drawnNumbers.every(n => tempSelection.includes(n))
+            );
+            
+            if (isDuplicate) {
+              numbers = []; // Reinicia para evitar sequência idêntica ao histórico
+              continue;
+            }
+          }
+          
+          numbers.push(candidate);
+        }
       }
 
-      // Aplicar filtros anti-padrões impossíveis
-      numbers = this.applyIntelligentFilters(numbers, latestDraws, config.totalNumbers, lotteryId);
-
-      // Verificação de qualidade final
-      numbers = this.validateNumberQuality(numbers, statisticalAnalysis, count, config.totalNumbers);
+      if (numbers.length < count) {
+        return this.generateIntelligentRandomNumbers(count, config.totalNumbers, lotteryId);
+      }
 
       return numbers.sort((a, b) => a - b);
     } catch (error) {
