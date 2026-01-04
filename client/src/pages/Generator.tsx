@@ -23,7 +23,6 @@ import {
   Sun,
   Brain,
   Copy,
-  Download,
   Share,
   RefreshCw,
   Target,
@@ -33,9 +32,6 @@ import {
 } from "lucide-react";
 import type { UserGame, LotteryType } from "@/types/lottery";
 import BettingPlatformIntegration from "@/components/BettingPlatformIntegration";
-
-import { jsPDF } from "jspdf";
-import logoPng from "@assets/Logo_Futurista_da_Shark_Loterias_1757013773517-B635QT2F_1767439134606.png";
 
 const generateGameSchema = z.object({
   lotteryId: z.string().min(1, "Selecione uma modalidade"),
@@ -650,14 +646,6 @@ export default function Generator() {
                 </CardTitle>
                 {generatedGames.length > 0 && (
                   <div className="flex gap-2">
-                    <Button
-                      onClick={exportToPDF}
-                      className="bg-primary hover:bg-primary/80 text-white flex items-center gap-2"
-                      data-testid="export-pdf-button"
-                    >
-                      <Download className="h-4 w-4 mr-1" />
-                      Exportar PDF
-                    </Button>
                   </div>
                 )}
               </CardHeader>
