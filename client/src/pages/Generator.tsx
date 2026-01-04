@@ -70,87 +70,6 @@ export default function Generator() {
     });
   };
 
-  const exportToPDF = () => {
-    try {
-      const doc = new jsPDF();
-      const pageWidth = doc.internal.pageSize.getWidth();
-      const pageHeight = doc.internal.pageSize.getHeight();
-
-      // Logo Watermark - Background
-      try {
-        const imgWidth = 120;
-        const imgHeight = 120;
-        const docAny = doc as any;
-        
-        // Ativar transparência se suportado
-        if (docAny.saveGraphicsState && docAny.setGState) {
-          docAny.saveGraphicsState();
-          const GState = (jsPDF as any).GState || docAny.GState;
-          if (GState) {
-            docAny.setGState(new GState({ opacity: 0.25 }));
-          }
-          doc.addImage(
-            logoPng, 
-            "PNG", 
-            (pageWidth - imgWidth) / 2, 
-            (pageHeight - imgHeight) / 2, 
-            imgWidth, 
-            imgHeight, 
-            undefined, 
-            'FAST'
-          );
-          docAny.restoreGraphicsState();
-        } else {
-          // Fallback: Logo bem clara no fundo (se não suportar GState, a imagem original será usada)
-          doc.addImage(logoPng, "PNG", (pageWidth - imgWidth) / 2, (pageHeight - imgHeight) / 2, imgWidth, imgHeight, undefined, 'FAST');
-        }
-      } catch (e) {
-        console.error("Logo error:", e);
-      }
-
-      doc.setFontSize(22);
-      doc.setTextColor(0, 150, 255);
-      doc.text("Shark Loterias - Relatorio de Resultados", pageWidth / 2, 20, { align: "center" });
-
-      doc.setFontSize(10);
-      doc.setTextColor(150, 150, 150);
-      doc.text(`Gerado em: ${new Date().toLocaleString("pt-BR")}`, pageWidth / 2, 28, { align: "center" });
-
-      doc.setFontSize(14);
-      doc.setTextColor(0, 0, 0);
-      doc.text("Resumo Geral", 20, 45);
-      
-      doc.setFontSize(11);
-      doc.text(`Total de Jogos: ${generatedGames.length}`, 20, 55);
-      doc.text(`Jogos Premiados: 0`, 20, 62);
-      doc.text(`Total Acumulado: R$ 0,00`, 20, 69);
-
-      let yPos = 85;
-      generatedGames.forEach((game: any, index: number) => {
-        if (yPos > pageHeight - 40) {
-          doc.addPage();
-          yPos = 20;
-        }
-        doc.setFontSize(11);
-        doc.setTextColor(0, 0, 0);
-        doc.text(`${index + 1}. ${selectedLottery?.displayName || 'Loteria'} - Concurso #PROXIMO`, 20, yPos);
-        
-        doc.setFontSize(9);
-        doc.setTextColor(100, 100, 100);
-        doc.text(`Números: ${game.numbers.sort((a: number, b: number) => a - b).join(", ")}`, 20, yPos + 7);
-        doc.text(`Acertos: 0 | Prêmio: R$ 0,00`, 20, yPos + 14);
-        doc.text(`Data: ${new Date().toLocaleDateString('pt-BR')} | Estratégia: ${game.strategy}`, 20, yPos + 21);
-        
-        yPos += 35;
-      });
-
-      doc.save("Shark_Loterias_Relatorio.pdf");
-    } catch (error) {
-      console.error("PDF Export failed:", error);
-      alert("Erro ao gerar PDF. Verifique se há jogos para exportar.");
-    }
-  };
-
   // Parse URL parameters
   const urlParams = new URLSearchParams(location.split('?')[1] || '');
   const preselectedLottery = urlParams.get('lottery');
@@ -364,7 +283,7 @@ export default function Generator() {
       <Navigation />
 
       <main className="container mx-auto px-4 py-4">
-        <div className="flex flex-col md:flex-row items-center justify-between mb-4 gap-4">
+        <div className="text-center mb-4">
           <div>
             <h2 className="text-2xl font-bold neon-text text-primary mb-1" data-testid="generator-title">
               Gerador Inteligente 🔮
@@ -373,9 +292,6 @@ export default function Generator() {
               Gere jogos com estratégias baseadas em IA e análise estatística
             </p>
           </div>
-          <Button onClick={exportToPDF} className="bg-primary hover:bg-primary/80 text-white flex items-center gap-2">
-            <Download className="h-4 w-4" /> Exportar PDF
-          </Button>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
