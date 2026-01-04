@@ -101,7 +101,7 @@ export default function Generator() {
           );
           docAny.restoreGraphicsState();
         } else {
-          // Fallback: Logo bem clara no fundo
+          // Fallback: Logo bem clara no fundo (se não suportar GState, a imagem original será usada)
           doc.addImage(logoPng, "PNG", (pageWidth - imgWidth) / 2, (pageHeight - imgHeight) / 2, imgWidth, imgHeight, undefined, 'FAST');
         }
       } catch (e) {
@@ -145,18 +145,9 @@ export default function Generator() {
       });
 
       doc.save("Shark_Loterias_Relatorio.pdf");
-      
-      toast({
-        title: "PDF Gerado!",
-        description: "Seus jogos foram exportados para PDF com sucesso.",
-      });
     } catch (error) {
       console.error("PDF Export failed:", error);
-      toast({
-        title: "Erro ao Exportar",
-        description: "Não foi possível gerar o PDF.",
-        variant: "destructive",
-      });
+      alert("Erro ao gerar PDF. Verifique se há jogos para exportar.");
     }
   };
 
