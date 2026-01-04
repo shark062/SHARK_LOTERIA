@@ -467,9 +467,11 @@ class LotteryService {
     // Frequência
     numbers.forEach(n => {
       const f = freqMap.get(n);
-      if (f?.temperature === 'hot') score += 5;
-      if (f?.temperature === 'warm') score += 10;
-      if (f?.temperature === 'cold') score += 15;
+      if (f) {
+        if (f.temperature === 'hot') score += 5;
+        if (f.temperature === 'warm') score += 10;
+        if (f.temperature === 'cold') score += 15;
+      }
     });
 
     return score;
@@ -541,7 +543,7 @@ class LotteryService {
       }
 
       return games;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error generating games:', error);
       throw new Error('Failed to generate games: ' + error.message);
     }
@@ -591,8 +593,9 @@ class LotteryService {
           // Se o jogo estiver quase completo, validar contra histórico
           if (tempSelection.length === count) {
             const isDuplicate = latestDraws.some(draw => 
+              draw.drawnNumbers && 
               draw.drawnNumbers.length === count && 
-              draw.drawnNumbers.every(n => tempSelection.includes(n))
+              (draw.drawnNumbers as number[]).every((n: number) => tempSelection.includes(n))
             );
             
             if (isDuplicate) {
@@ -610,7 +613,7 @@ class LotteryService {
       }
 
       return numbers.sort((a, b) => a - b);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error generating strategy numbers:', error);
       return this.generateIntelligentRandomNumbers(count, config.totalNumbers, lotteryId);
     }
