@@ -373,6 +373,7 @@ export default function Generator() {
       <Navigation />
 
       <main className="container mx-auto px-4 py-4">
+        <div className="text-center mb-4">
           <div>
             <h2 className="text-2xl font-bold neon-text text-primary mb-1" data-testid="generator-title">
               Gerador Inteligente 🔮
