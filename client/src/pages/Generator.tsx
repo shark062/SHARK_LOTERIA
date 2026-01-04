@@ -373,7 +373,7 @@ export default function Generator() {
       <Navigation />
 
       <main className="container mx-auto px-4 py-4">
-        <div className="text-center mb-4">
+        <div className="flex flex-col md:flex-row items-center justify-between mb-4 gap-4">
           <div>
             <h2 className="text-2xl font-bold neon-text text-primary mb-1" data-testid="generator-title">
               Gerador Inteligente 🔮
@@ -382,6 +382,9 @@ export default function Generator() {
               Gere jogos com estratégias baseadas em IA e análise estatística
             </p>
           </div>
+          <Button onClick={exportToPDF} className="bg-primary hover:bg-primary/80 text-white flex items-center gap-2">
+            <Download className="h-4 w-4" /> Exportar PDF
+          </Button>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
