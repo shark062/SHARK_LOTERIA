@@ -434,6 +434,47 @@ class LotteryService {
     return prizesMap[lotteryId] || 'R$ 1.000.000,00';
   }
 
+  private validateSequence(numbers: number[], maxConsecutive: number = 2): boolean {
+    const sorted = [...numbers].sort((a, b) => a - b);
+    let consecutive = 1;
+    for (let i = 1; i < sorted.length; i++) {
+      if (sorted[i] === sorted[i - 1] + 1) {
+        consecutive++;
+        if (consecutive > maxConsecutive) return false;
+      } else {
+        consecutive = 1;
+      }
+    }
+    return true;
+  }
+
+  private validateDistribution(numbers: number[], maxNumber: number, faixas: number = 3): boolean {
+    const size = Math.ceil(maxNumber / faixas);
+    const dist = new Array(faixas).fill(0);
+    numbers.forEach(n => dist[Math.floor((n - 1) / size)]++);
+    return dist.every(count => count > 0) && dist.every(count => count <= numbers.length * 0.7);
+  }
+
+  private calculateGameScore(numbers: number[], frequencies: any[]): number {
+    let score = 0;
+    const freqMap = new Map(frequencies.map(f => [f.number, f]));
+    
+    // Paridade
+    const evens = numbers.filter(n => n % 2 === 0).length;
+    const parityRatio = evens / numbers.length;
+    if (parityRatio >= 0.4 && parityRatio <= 0.6) score += 20;
+    
+    // Frequência
+    numbers.forEach(n => {
+      const f = freqMap.get(n);
+      if (f?.temperature === 'hot') score += 5;
+      if (f?.temperature === 'warm') score += 10;
+      if (f?.temperature === 'cold') score += 15;
+    });
+
+    return score;
+  }
+
   async generateGames(params: GenerateGamesParams): Promise<InsertUserGame[]> {
     try {
       const lottery = await storage.getLotteryType(params.lotteryId);
@@ -446,6 +487,7 @@ class LotteryService {
         throw new Error('Unable to get next draw information');
       }
 
+      const frequencies = await storage.getNumberFrequencies(params.lotteryId);
       const games: InsertUserGame[] = [];
       const generatedSequences = new Set<string>();
 
@@ -453,6 +495,8 @@ class LotteryService {
       for (let i = 0; i < params.gamesCount; i++) {
         let selectedNumbers: number[];
         let attempts = 0;
+        let bestGame: number[] | null = null;
+        let bestScore = -1;
 
         do {
           attempts++;
@@ -462,13 +506,25 @@ class LotteryService {
             selectedNumbers = await this.generateNumbers(params.lotteryId, params.numbersCount, params.strategy, lottery, i + attempts);
           }
           selectedNumbers.sort((a, b) => a - b);
-          const sequenceKey = selectedNumbers.join(',');
           
-          if (!generatedSequences.has(sequenceKey) || attempts > 10) {
+          const isValid = this.validateSequence(selectedNumbers) && 
+                        this.validateDistribution(selectedNumbers, lottery.totalNumbers);
+          
+          if (isValid) {
+            const currentScore = this.calculateGameScore(selectedNumbers, frequencies);
+            if (currentScore > bestScore) {
+              bestScore = currentScore;
+              bestGame = [...selectedNumbers];
+            }
+          }
+
+          const sequenceKey = (bestGame || selectedNumbers).join(',');
+          if ((!generatedSequences.has(sequenceKey) && bestGame) || attempts > 20) {
+            selectedNumbers = bestGame || selectedNumbers;
             generatedSequences.add(sequenceKey);
             break;
           }
-        } while (attempts <= 10);
+        } while (attempts <= 20);
 
         const game: InsertUserGame = {
           userId: params.userId,
